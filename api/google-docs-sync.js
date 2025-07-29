@@ -216,7 +216,16 @@ export default async function handler(req, res) {
         });
         
         // Convert the DOCX data to base64 for transmission
-        const docxBuffer = Buffer.from(exportResponse.data);
+        let docxBuffer;
+        if (exportResponse.data instanceof ArrayBuffer) {
+            docxBuffer = Buffer.from(exportResponse.data);
+        } else if (typeof exportResponse.data === 'string') {
+            docxBuffer = Buffer.from(exportResponse.data, 'binary');
+        } else {
+            // Handle Blob or other types by converting to ArrayBuffer first
+            const arrayBuffer = await exportResponse.data.arrayBuffer();
+            docxBuffer = Buffer.from(arrayBuffer);
+        }
         const docxBase64 = docxBuffer.toString('base64');
         
         const response = {
