@@ -5,7 +5,6 @@
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'Build step not needed for static site'",
     "start": "python -m http.server 8000",
     "deploy": "vercel --prod"
   },
