@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
     <div class="app-container">
@@ -60,8 +60,8 @@
                                 </button>
                                 
                                 <button id="updateDriveButton" class="btn btn-success" disabled>
-                                    <span class="btn-icon">💾</span>
-                                    Update file on Google Drive
+                                    <span class="btn-icon">📁</span>
+                                    Save to GitHub
                                 </button>
                             </div>
                         </div>
@@ -81,8 +81,8 @@
                                 <span id="fileSize" class="status-value">-</span>
                             </div>
                             <div class="status-item">
-                                <span class="status-label">Drive Status:</span>
-                                <span id="driveStatus" class="status-value status-idle">Not updated</span>
+                                <span class="status-label">GitHub Status:</span>
+                                <span id="driveStatus" class="status-value status-idle">Not saved</span>
                             </div>
                         </div>
                     </div>
@@ -169,7 +169,7 @@
 
     <!-- Scripts -->
     <script src="api/mock-google-docs-sync.js"></script>
-    <script src="googleDocsSync.js"></script>
-    <script src="app.js"></script>
+    <script src="js/googleDocsSync.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
