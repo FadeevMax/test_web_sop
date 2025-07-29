@@ -279,21 +279,20 @@ class GTISOPApp {
      * Update chunking results in UI
      */
     updateChunkingResults(statistics) {
-        const totalChunks = document.getElementById('totalChunks');
-        const totalImages = document.getElementById('totalImages');
-        const avgChunkSize = document.getElementById('avgChunkSize');
+        const chunksCount = document.getElementById('chunksCount');
+        const imagesCount = document.getElementById('imagesCount');
+        const lastChunkingTime = document.getElementById('lastChunkingTime');
         
-        if (totalChunks) {
-            totalChunks.textContent = statistics.totalChunks || '-';
+        if (chunksCount) {
+            chunksCount.textContent = statistics.totalChunks || '-';
         }
         
-        if (totalImages) {
-            totalImages.textContent = statistics.totalImages || '-';
+        if (imagesCount) {
+            imagesCount.textContent = statistics.totalImages || '-';
         }
         
-        if (avgChunkSize) {
-            avgChunkSize.textContent = statistics.averageChunkSize ? 
-                `${statistics.averageChunkSize} chars` : '-';
+        if (lastChunkingTime) {
+            lastChunkingTime.textContent = new Date().toLocaleTimeString();
         }
     }
 
