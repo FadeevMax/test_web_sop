@@ -54,6 +54,7 @@ class GoogleDocsSync {
                 this.lastSyncTime = state.lastSyncTime;
                 this.documentInfo = state.documentInfo;
                 this.docxData = state.docxData;
+                this.storage = state.storage;
             }
         } catch (error) {
             console.warn('Failed to load saved sync state:', error);
@@ -68,7 +69,8 @@ class GoogleDocsSync {
             const state = {
                 lastSyncTime: this.lastSyncTime,
                 documentInfo: this.documentInfo,
-                docxData: this.docxData
+                docxData: this.docxData,
+                storage: this.storage
             };
             localStorage.setItem('googleDocsSync', JSON.stringify(state));
         } catch (error) {
@@ -196,6 +198,7 @@ class GoogleDocsSync {
                 // Store the document info and DOCX data
                 this.documentInfo = data.document;
                 this.docxData = data.docx;
+                this.storage = data.storage; // Store Drive storage info
                 this.lastSyncTime = new Date().toISOString();
 
                 this.updateProgress(100, 'Sync completed successfully!');
@@ -206,7 +209,14 @@ class GoogleDocsSync {
                 // Update UI
                 this.updateUI();
 
-                this.showNotification(`Successfully synced: ${this.documentInfo.name}`, 'success');
+                // Show success message with storage info
+                let successMessage = `Successfully synced: ${this.documentInfo.name}`;
+                if (data.storage && data.storage.saved) {
+                    successMessage += ` (Saved to Drive: ${data.storage.folderName})`;
+                } else if (data.storage && !data.storage.saved) {
+                    successMessage += ` (Drive save failed: ${data.storage.error})`;
+                }
+                this.showNotification(successMessage, 'success');
             }
             
         } catch (error) {
@@ -336,6 +346,16 @@ class GoogleDocsSync {
                 const documentName = document.getElementById('documentName');
                 if (documentName) {
                     documentName.textContent = this.documentInfo.name;
+                }
+                
+                // Show Drive storage info if available
+                const downloadStatus = document.getElementById('downloadStatus');
+                if (downloadStatus && this.storage) {
+                    if (this.storage.saved) {
+                        downloadStatus.textContent = `Ready for download (Also saved to Drive: ${this.storage.folderName})`;
+                    } else {
+                        downloadStatus.textContent = 'Ready for download';
+                    }
                 }
             }
         } else {

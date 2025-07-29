@@ -252,6 +252,67 @@ export default async function handler(req, res) {
         
         console.log(`🎉 Successfully exported document: ${fileInfo.data.name} (${docxBuffer.length} bytes)`);
         
+        // Save the DOCX file to Google Drive for future use
+        try {
+            console.log('💾 Saving DOCX to Google Drive...');
+            
+            // Create or find "GTI_SOP_Downloads" folder
+            let folderId;
+            const folderSearchResponse = await drive.files.list({
+                q: "name='GTI_SOP_Downloads' and mimeType='application/vnd.google-apps.folder'",
+                fields: 'files(id, name)'
+            });
+            
+            if (folderSearchResponse.data.files.length === 0) {
+                // Create the folder
+                const folderResponse = await drive.files.create({
+                    requestBody: {
+                        name: 'GTI_SOP_Downloads',
+                        mimeType: 'application/vnd.google-apps.folder'
+                    },
+                    fields: 'id'
+                });
+                folderId = folderResponse.data.id;
+                console.log(`📁 Created folder: GTI_SOP_Downloads (${folderId})`);
+            } else {
+                folderId = folderSearchResponse.data.files[0].id;
+                console.log(`📁 Using existing folder: GTI_SOP_Downloads (${folderId})`);
+            }
+            
+            // Save the DOCX file to the folder
+            const fileName = `${fileInfo.data.name}_${new Date().toISOString().split('T')[0]}.docx`;
+            const uploadResponse = await drive.files.create({
+                requestBody: {
+                    name: fileName,
+                    parents: [folderId],
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                },
+                media: {
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    body: docxBuffer
+                },
+                fields: 'id, name, webViewLink'
+            });
+            
+            console.log(`✅ Saved DOCX to Drive: ${uploadResponse.data.name} (${uploadResponse.data.id})`);
+            
+            // Add storage info to response
+            response.storage = {
+                saved: true,
+                driveFileId: uploadResponse.data.id,
+                driveFileName: uploadResponse.data.name,
+                driveLink: uploadResponse.data.webViewLink,
+                folderName: 'GTI_SOP_Downloads'
+            };
+            
+        } catch (storageError) {
+            console.error('⚠️ Failed to save to Drive:', storageError.message);
+            response.storage = {
+                saved: false,
+                error: storageError.message
+            };
+        }
+        
         res.status(200).json(response);
         
     } catch (error) {
