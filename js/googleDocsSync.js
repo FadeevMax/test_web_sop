@@ -72,7 +72,7 @@ class GoogleDocsSync {
     }
 
     /**
-     * Save current sync state to localStorage
+     * Save current sync state to localStorage (without large DOCX data)
      */
     saveSyncState() {
         try {
@@ -80,7 +80,8 @@ class GoogleDocsSync {
                 lastSyncTime: this.lastSyncTime,
                 lastDriveUpdate: this.lastDriveUpdate,
                 documentInfo: this.documentInfo,
-                docxData: this.docxData,
+                // Don't save DOCX data to avoid quota exceeded errors
+                docxData: this.docxData ? { size: this.docxData.size, mimeType: this.docxData.mimeType } : null,
                 driveFileInfo: this.driveFileInfo
             };
             localStorage.setItem('googleDocsSync', JSON.stringify(state));
@@ -241,7 +242,7 @@ class GoogleDocsSync {
             return;
         }
 
-        if (!this.docxData || !this.documentInfo) {
+        if (!this.documentInfo) {
             this.showNotification('No document available to update. Please sync first.', 'warning');
             return;
         }
@@ -259,7 +260,7 @@ class GoogleDocsSync {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    docxData: this.docxData,
+                    documentId: this.documentInfo.id,
                     documentInfo: this.documentInfo
                 })
             });
@@ -391,7 +392,7 @@ class GoogleDocsSync {
         }
 
         if (updateDriveButton) {
-            updateDriveButton.disabled = !this.docxData || this.isProcessing || this.isDriveUpdating;
+            updateDriveButton.disabled = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
             if (this.isDriveUpdating) {
                 updateDriveButton.innerHTML = '<span class="btn-icon">⏳</span>Updating Drive...';
             } else {
