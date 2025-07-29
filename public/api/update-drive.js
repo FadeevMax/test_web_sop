@@ -95,6 +95,17 @@ export default async function handler(req, res) {
         const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || '1YhzMVcEiaBibSAUfycxDlKVcWQ3Yi-xR';
         console.log(`📁 Using folder ID: ${folderId}`);
         
+        // Try to verify folder access first
+        try {
+            const folderInfo = await drive.files.get({
+                fileId: folderId,
+                fields: 'id, name, mimeType, capabilities'
+            });
+            console.log(`✅ Folder accessible: ${folderInfo.data.name} (${folderInfo.data.mimeType})`);
+        } catch (folderError) {
+            console.error(`❌ Cannot access folder ${folderId}:`, folderError.message);
+        }
+        
         // Create filename with timestamp
         const timestamp = new Date().toISOString().split('T')[0];
         const fileName = `${documentInfo.name}_${timestamp}.docx`;
