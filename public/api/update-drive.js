@@ -62,15 +62,16 @@ export default async function handler(req, res) {
         const auth = new GoogleAuth({
             credentials: serviceAccountKey,
             scopes: [
-                'https://www.googleapis.com/auth/documents.readonly',
-                'https://www.googleapis.com/auth/drive'
+                'https://www.googleapis.com/auth/drive',
+                'https://www.googleapis.com/auth/drive.file',
+                'https://www.googleapis.com/auth/documents.readonly'
             ]
         });
         
         const authClient = await auth.getClient();
         const drive = google.drive({ version: 'v3', auth: authClient });
         
-        // Re-export the document directly from Google Docs to avoid large payload issues
+        // Re-export the document directly from Google Docs (matching Python approach)
         console.log('📄 Re-exporting document from Google Docs...');
         const exportResponse = await drive.files.export({
             fileId: documentId,
@@ -91,72 +92,29 @@ export default async function handler(req, res) {
         
         console.log(`📊 DOCX buffer size: ${docxBuffer.length} bytes`);
         
-        // Use specific folder ID from environment or default
+        // Use specific folder ID from environment or default - match Python exactly
         const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || '1YhzMVcEiaBibSAUfycxDlKVcWQ3Yi-xR';
-        console.log(`📁 Using folder ID: ${folderId}`);
-        
-        // Try to verify folder access first
-        try {
-            const folderInfo = await drive.files.get({
-                fileId: folderId,
-                fields: 'id, name, mimeType, capabilities'
-            });
-            console.log(`✅ Folder accessible: ${folderInfo.data.name} (${folderInfo.data.mimeType})`);
-        } catch (folderError) {
-            console.error(`❌ Cannot access folder ${folderId}:`, folderError.message);
-        }
+        console.log(`📁 Target folder ID: ${folderId}`);
         
         // Create filename with timestamp
         const timestamp = new Date().toISOString().split('T')[0];
         const fileName = `${documentInfo.name}_${timestamp}.docx`;
         
-        // Import Readable stream for large file handling
-        const { Readable } = await import('stream');
+        // Use Python's exact approach: files().create(body=file_metadata, media_body=media)
+        console.log(`📄 Creating DOCX file using Python-matching approach...`);
         
-        // Create a readable stream from the buffer for large file handling
-        const docxStream = new Readable({
-            read() {
-                this.push(docxBuffer);
-                this.push(null);
-            }
-        });
-        
-        // Workaround: Create file in My Drive root first, then move to target folder
-        console.log(`📄 Creating file in My Drive root first (service account limitation workaround)`);
-        
-        // First, create the file in My Drive root (no parent folder)
-        const createResponse = await drive.files.create({
+        const uploadResponse = await drive.files.create({
             requestBody: {
                 name: fileName,
+                parents: [folderId],
                 mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             },
             media: {
                 mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                body: docxStream
+                body: docxBuffer
             },
             fields: 'id, name, webViewLink, modifiedTime'
         });
-        
-        console.log(`✅ File created in My Drive: ${createResponse.data.name} (${createResponse.data.id})`);
-        
-        // Then move it to the target folder
-        try {
-            console.log(`📂 Moving file to target folder: ${folderId}`);
-            const moveResponse = await drive.files.update({
-                fileId: createResponse.data.id,
-                addParents: folderId,
-                removeParents: 'root',
-                fields: 'id, name, webViewLink, modifiedTime, parents'
-            });
-            
-            console.log(`✅ File moved to target folder successfully`);
-            uploadResponse = moveResponse;
-            
-        } catch (moveError) {
-            console.warn(`⚠️ Could not move file to target folder, but file was created: ${moveError.message}`);
-            // Use the original response even if move failed
-            uploadResponse = createResponse;
-        }
         
         console.log(`✅ Successfully saved to Drive: ${uploadResponse.data.name} (${uploadResponse.data.id})`);
         
