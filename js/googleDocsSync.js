@@ -254,7 +254,10 @@ class GoogleDocsSync {
         try {
             this.updateProgress(10, 'Preparing Drive update...');
             
-            const response = await fetch(this.driveApiUrl, {
+            // Add cache-busting parameter to avoid 404 caching issues
+            const apiUrl = `${this.driveApiUrl}?t=${Date.now()}`;
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
