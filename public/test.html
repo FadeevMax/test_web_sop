@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTI SOP Assistant - Test Page</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            border: 1px solid #444;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .log {
+            background: #111;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 GTI SOP Assistant - Test Page</h1>
+    <p>This page helps test the Google Docs sync functionality locally.</p>
+
+    <div class="test-section">
+        <h2>📋 System Check</h2>
+        <div id="systemStatus">
+            <p class="info">⏳ Checking system components...</p>
+        </div>
+        <button onclick="runSystemCheck()">🔍 Run System Check</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Google Docs Test</h2>
+        <div>
+            <label>Google Doc URL, ID, or Name:</label>
+            <input type="text" id="testDocId" value="GTI Data Base and SOP" placeholder="Enter document URL, ID, or name">
+            <button onclick="testGoogleDocsConnection()">🧪 Test Connection</button>
+        </div>
+        <div id="connectionStatus">
+            <p class="info">Enter a document ID/URL and click Test Connection</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📄 Main App</h2>
+        <p>Ready to use the main application?</p>
+        <button onclick="window.location.href='index.html'">🚀 Open GTI SOP Assistant</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Debug Log</h2>
+        <div id="debugLog" class="log">
+            <div>🔧 Debug log initialized...</div>
+        </div>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <script src="api/mock-google-docs-sync.js"></script>
+    <script>
+        // Debug logging
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '<div>🔧 Debug log cleared...</div>';
+        }
+
+        // System check
+        function runSystemCheck() {
+            const statusDiv = document.getElementById('systemStatus');
+            statusDiv.innerHTML = '<p class="info">⏳ Running system check...</p>';
+            
+            log('Starting system check...');
+            
+            let issues = [];
+            let successes = [];
+
+            // Check if required files exist (we can't directly check file existence from browser)
+            successes.push('✅ HTML structure loaded');
+            log('HTML structure check: PASSED');
+
+            // Check if JavaScript classes would be available
+            try {
+                if (typeof Storage !== "undefined") {
+                    successes.push('✅ Local storage available');
+                    log('Local storage check: PASSED');
+                } else {
+                    issues.push('❌ Local storage not available');
+                    log('Local storage check: FAILED', 'error');
+                }
+            } catch (e) {
+                issues.push('❌ Storage check failed');
+                log('Storage check error: ' + e.message, 'error');
+            }
+
+            // Check if we can make fetch requests
+            if (typeof fetch !== "undefined") {
+                successes.push('✅ Fetch API available');
+                log('Fetch API check: PASSED');
+            } else {
+                issues.push('❌ Fetch API not available');
+                log('Fetch API check: FAILED', 'error');
+            }
+
+            // Check if we're on HTTPS or localhost (required for some features)
+            if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                successes.push('✅ Secure context available');
+                log('Secure context check: PASSED');
+            } else {
+                issues.push('⚠️ Not in secure context (some features may not work)');
+                log('Secure context check: WARNING', 'error');
+            }
+
+            // Generate report
+            let report = '<h3>System Check Results</h3>';
+            
+            if (successes.length > 0) {
+                report += '<div class="success">' + successes.join('<br>') + '</div>';
+            }
+            
+            if (issues.length > 0) {
+                report += '<div class="error">' + issues.join('<br>') + '</div>';
+            }
+
+            if (issues.length === 0) {
+                report += '<p class="success">🎉 All checks passed! System is ready.</p>';
+                log('System check completed: ALL PASSED', 'success');
+            } else {
+                report += '<p class="error">⚠️ Some issues found. Check details above.</p>';
+                log('System check completed: ISSUES FOUND', 'error');
+            }
+
+            statusDiv.innerHTML = report;
+        }
+
+        // Test Google Docs connection
+        async function testGoogleDocsConnection() {
+            const docId = document.getElementById('testDocId').value.trim();
+            const statusDiv = document.getElementById('connectionStatus');
+            
+            if (!docId) {
+                statusDiv.innerHTML = '<p class="error">❌ Please enter a document ID, URL, or name</p>';
+                log('Connection test: No document input provided', 'error');
+                return;
+            }
+
+            statusDiv.innerHTML = '<p class="info">⏳ Testing connection...</p>';
+            log(`Testing connection to document: ${docId}`);
+
+            try {
+                // Check if running locally
+                const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                
+                if (isLocalhost && typeof window.mockGoogleDocsSync === 'function') {
+                    // Use mock API for local testing
+                    log('Using mock API for local testing', 'info');
+                    statusDiv.innerHTML = '<p class="info">⏳ Using mock API for local testing...</p>';
+                    
+                    const data = await window.mockGoogleDocsSync(docId);
+                    log('Mock API response received successfully', 'success');
+                    
+                    statusDiv.innerHTML = `
+                        <p class="success">✅ Mock connection successful!</p>
+                        <p><strong>Document:</strong> ${data.document.name}</p>
+                        <p><strong>Size:</strong> ${(data.docx.size / 1024).toFixed(1)} KB</p>
+                        <p><strong>Modified:</strong> ${new Date(data.document.modifiedTime).toLocaleString()}</p>
+                        <p><em>🧪 This is mock data for local testing</em></p>
+                    `;
+                } else {
+                    // Extract document ID if it's a URL (for real API)
+                    let documentId = docId;
+                    const patterns = [
+                        /\/document\/d\/([a-zA-Z0-9-_]+)/,
+                        /\/d\/([a-zA-Z0-9-_]+)/,
+                        /id=([a-zA-Z0-9-_]+)/
+                    ];
+                    
+                    for (const pattern of patterns) {
+                        const match = docId.match(pattern);
+                        if (match) {
+                            documentId = match[1];
+                            break;
+                        }
+                    }
+
+                    log(`Processed document input: ${documentId}`);
+
+                    // Test real API endpoint
+                    const response = await fetch('/api/google-docs-sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            documentId: documentId
+                        })
+                    });
+
+                    log(`API response status: ${response.status}`);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        log('API response received successfully', 'success');
+                        
+                        statusDiv.innerHTML = `
+                            <p class="success">✅ Connection successful!</p>
+                            <p><strong>Document:</strong> ${data.document.name}</p>
+                            <p><strong>Size:</strong> ${(data.docx.size / 1024).toFixed(1)} KB</p>
+                            <p><strong>Modified:</strong> ${new Date(data.document.modifiedTime).toLocaleString()}</p>
+                        `;
+                    } else {
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        log(`API error: ${errorData.error}`, 'error');
+                        
+                        statusDiv.innerHTML = `
+                            <p class="error">❌ Connection failed</p>
+                            <p><strong>Error:</strong> ${errorData.error}</p>
+                            <p><strong>Details:</strong> ${errorData.details || 'No additional details'}</p>
+                        `;
+                    }
+                }
+            } catch (error) {
+                log(`Connection test error: ${error.message}`, 'error');
+                
+                statusDiv.innerHTML = `
+                    <p class="error">❌ Test failed</p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><em>Note: For production testing, deploy to Vercel with proper Google Cloud credentials</em></p>
+                `;
+            }
+        }
+
+        // Auto-run system check on load
+        window.addEventListener('load', function() {
+            log('Test page loaded');
+            setTimeout(runSystemCheck, 500);
+        });
+    </script>
+</body>
+</html>

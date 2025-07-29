@@ -5,8 +5,7 @@
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
-    "start": "python -m http.server 8000",
-    "deploy": "vercel --prod"
+    "start": "python -m http.server 8000"
   },
   "dependencies": {
     "googleapis": "^128.0.0",

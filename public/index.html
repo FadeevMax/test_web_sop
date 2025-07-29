@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTI SOP Assistant - Try 2</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo">🚀</div>
+                    <h1 class="main-title">GTI SOP Assistant</h1>
+                </div>
+                <p class="subtitle">Document Management & Processing</p>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>📄 Document Management</h2>
+                </div>
+                
+                <div class="sidebar-content">
+                    <!-- Google Docs Section -->
+                    <div class="section google-docs-section">
+                        <h3>☁️ Google Docs Integration</h3>
+                        <p class="section-description">Download DOCX files directly from Google Docs</p>
+                        
+                        <div class="google-docs-controls">
+                            <div class="form-group">
+                                <label for="googleDocUrl" class="form-label">Google Doc URL, ID, or Name</label>
+                                <input 
+                                    type="text" 
+                                    id="googleDocUrl" 
+                                    class="form-input" 
+                                    placeholder="Enter Google Doc URL, Document ID, or Document Name"
+                                    value="GTI Data Base and SOP"
+                                >
+                            </div>
+                            
+                            <div class="button-group">
+                                <button id="syncDocButton" class="btn btn-primary">
+                                    <span class="btn-icon">☁️</span>
+                                    Sync from Google Docs
+                                </button>
+                                
+                                <button id="downloadDocxButton" class="btn btn-secondary" disabled>
+                                    <span class="btn-icon">📥</span>
+                                    Download DOCX
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status Display -->
+                        <div class="status-section">
+                            <div class="status-item">
+                                <span class="status-label">Status:</span>
+                                <span id="syncStatus" class="status-value status-idle">Ready</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Sync:</span>
+                                <span id="lastSyncTime" class="status-value">Never</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">File Size:</span>
+                                <span id="fileSize" class="status-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div id="progressSection" class="section progress-section hidden">
+                        <h4>📊 Processing Progress</h4>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="progress-text">Initializing...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="content-header">
+                    <h2>📋 Document Status</h2>
+                </div>
+                
+                <div class="content-body">
+                    <!-- Welcome Message -->
+                    <div id="welcomeMessage" class="welcome-card">
+                        <div class="welcome-icon">📄</div>
+                        <h3>Welcome to GTI SOP Assistant</h3>
+                        <p>Use the sidebar to sync documents from Google Docs and download them as DOCX files.</p>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <span class="feature-icon">☁️</span>
+                                <span>Connect to Google Docs</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">📥</span>
+                                <span>Download DOCX files</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🔄</span>
+                                <span>Real-time sync status</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Preview -->
+                    <div id="documentPreview" class="document-preview hidden">
+                        <h3>📄 Document Information</h3>
+                        <div class="document-info">
+                            <div class="info-item">
+                                <span class="info-label">Document Name:</span>
+                                <span id="documentName" class="info-value">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">File Type:</span>
+                                <span id="documentType" class="info-value">DOCX</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Download Status:</span>
+                                <span id="downloadStatus" class="info-value">Ready for download</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-actions">
+                            <button id="previewDownloadButton" class="btn btn-success">
+                                <span class="btn-icon">💾</span>
+                                Download File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing your request...</p>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Scripts -->
+    <script src="api/mock-google-docs-sync.js"></script>
+    <script src="js/googleDocsSync.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
