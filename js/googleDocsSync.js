@@ -73,7 +73,7 @@ class GoogleDocsSync {
     }
 
     /**
-     * Save current sync state to localStorage (without large DOCX data)
+     * Save current sync state to localStorage (without any DOCX data)
      */
     saveSyncState() {
         try {
@@ -81,11 +81,12 @@ class GoogleDocsSync {
                 lastSyncTime: this.lastSyncTime,
                 lastDriveUpdate: this.lastDriveUpdate,
                 documentInfo: this.documentInfo,
-                // Don't save DOCX data to avoid quota exceeded errors
-                docxData: this.docxData ? { size: this.docxData.size, mimeType: this.docxData.mimeType } : null,
+                // Don't save ANY DOCX data to avoid quota exceeded errors
+                docxData: null, 
                 driveFileInfo: this.driveFileInfo
             };
             localStorage.setItem('googleDocsSync', JSON.stringify(state));
+            console.log('✅ Sync state saved successfully');
         } catch (error) {
             console.warn('Failed to save sync state:', error);
         }
@@ -215,10 +216,10 @@ class GoogleDocsSync {
 
                 this.updateProgress(100, 'Sync completed successfully!');
 
-                // Save state
+                // Save state (but don't let localStorage failure break the flow)
                 this.saveSyncState();
 
-                // Update UI
+                // Update UI immediately to enable buttons
                 this.updateUI();
 
                 this.showNotification(`Successfully synced: ${this.documentInfo.name}`, 'success');
@@ -400,7 +401,16 @@ class GoogleDocsSync {
         }
 
         if (updateDriveButton) {
-            updateDriveButton.disabled = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
+            // GitHub save only needs documentInfo (document ID), not the local DOCX data
+            const shouldDisable = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
+            console.log('🔍 GitHub button state:', {
+                documentInfo: !!this.documentInfo,
+                isProcessing: this.isProcessing,
+                isDriveUpdating: this.isDriveUpdating,
+                shouldDisable: shouldDisable
+            });
+            
+            updateDriveButton.disabled = shouldDisable;
             if (this.isDriveUpdating) {
                 updateDriveButton.innerHTML = '<span class="btn-icon">⏳</span>Saving to GitHub...';
             } else {

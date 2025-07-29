@@ -25,6 +25,9 @@ class GTISOPApp {
             this.googleDocsSync = new GoogleDocsSync();
             this.googleDocsSync.init();
 
+            // Initialize semantic chunking
+            this.initSemanticChunking();
+
             // Set up global event listeners
             this.setupGlobalEventListeners();
 
@@ -191,6 +194,133 @@ class GTISOPApp {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    /**
+     * Initialize semantic chunking functionality
+     */
+    initSemanticChunking() {
+        console.log('🧩 Initializing semantic chunking...');
+        
+        const processButton = document.getElementById('processChunksButton');
+        
+        if (processButton) {
+            processButton.addEventListener('click', () => this.processSemanticChunks());
+        }
+
+        // Button is always enabled since it downloads from GitHub
+        console.log('✅ Semantic chunking initialized - downloads from GitHub');
+    }
+
+
+    /**
+     * Process semantic chunks from the DOCX file
+     */
+    async processSemanticChunks() {
+        console.log('🧩 Starting semantic chunking process...');
+        
+        const chunkSize = document.getElementById('chunkSize')?.value || 800;
+        const maxChunkSize = document.getElementById('maxChunkSize')?.value || 1200;
+        
+        // Update UI to processing state
+        this.updateChunkingStatus('Processing...', 'processing');
+        this.showLoadingOverlay('Processing semantic chunks...');
+        
+        try {
+            const response = await fetch('./api/semantic-chunking.js', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chunkSize: parseInt(chunkSize),
+                    maxChunkSize: parseInt(maxChunkSize),
+                    overlapSize: 150
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update UI with results
+                this.updateChunkingResults(result.statistics);
+                this.updateChunkingStatus('Complete', 'success');
+                this.showNotification('Semantic chunks processed and uploaded to GitHub successfully!', 'success');
+            } else {
+                throw new Error(result.error || 'Processing failed');
+            }
+            
+        } catch (error) {
+            console.error('Semantic chunking error:', error);
+            this.updateChunkingStatus('Failed', 'error');
+            this.showError('Failed to process chunks', error.message);
+        } finally {
+            this.hideLoadingOverlay();
+        }
+    }
+
+
+    /**
+     * Update chunking status in UI
+     */
+    updateChunkingStatus(status, type = 'idle') {
+        const statusElement = document.getElementById('chunkingStatus');
+        if (statusElement) {
+            statusElement.textContent = status;
+            statusElement.className = `status-value status-${type}`;
+        }
+    }
+
+    /**
+     * Update chunking results in UI
+     */
+    updateChunkingResults(statistics) {
+        const totalChunks = document.getElementById('totalChunks');
+        const totalImages = document.getElementById('totalImages');
+        const avgChunkSize = document.getElementById('avgChunkSize');
+        
+        if (totalChunks) {
+            totalChunks.textContent = statistics.totalChunks || '-';
+        }
+        
+        if (totalImages) {
+            totalImages.textContent = statistics.totalImages || '-';
+        }
+        
+        if (avgChunkSize) {
+            avgChunkSize.textContent = statistics.averageChunkSize ? 
+                `${statistics.averageChunkSize} chars` : '-';
+        }
+    }
+
+    /**
+     * Show loading overlay
+     */
+    showLoadingOverlay(message) {
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+        
+        if (loadingText && message) {
+            loadingText.textContent = message;
+        }
+    }
+
+    /**
+     * Hide loading overlay
+     */
+    hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
     }
 
     /**
