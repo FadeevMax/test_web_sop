@@ -7,9 +7,11 @@ class GoogleDocsSync {
     constructor() {
         this.isProcessing = false;
         this.lastSyncTime = null;
+        this.lastGitHubSave = null;
         this.documentInfo = null;
         this.docxData = null;
         this.apiUrl = '/api/google-docs-sync';
+        this.githubApiUrl = '/api/save-to-github';
     }
 
     /**
@@ -52,8 +54,10 @@ class GoogleDocsSync {
             if (savedState) {
                 const state = JSON.parse(savedState);
                 this.lastSyncTime = state.lastSyncTime;
+                this.lastGitHubSave = state.lastGitHubSave;
                 this.documentInfo = state.documentInfo;
-                this.docxData = state.docxData;
+                // Don't load DOCX data from localStorage
+                this.docxData = null;
             }
         } catch (error) {
             console.warn('Failed to load saved sync state:', error);
@@ -61,16 +65,19 @@ class GoogleDocsSync {
     }
 
     /**
-     * Save current sync state to localStorage
+     * Save current sync state to localStorage (without DOCX data to avoid quota issues)
      */
     saveSyncState() {
         try {
             const state = {
                 lastSyncTime: this.lastSyncTime,
+                lastGitHubSave: this.lastGitHubSave,
                 documentInfo: this.documentInfo,
-                docxData: this.docxData
+                // Don't save DOCX data to avoid localStorage quota exceeded errors
+                docxData: null
             };
             localStorage.setItem('googleDocsSync', JSON.stringify(state));
+            console.log('✅ Sync state saved successfully');
         } catch (error) {
             console.warn('Failed to save sync state:', error);
         }
@@ -198,7 +205,12 @@ class GoogleDocsSync {
                 this.docxData = data.docx;
                 this.lastSyncTime = new Date().toISOString();
 
-                this.updateProgress(100, 'Sync completed successfully!');
+                this.updateProgress(90, 'Sync completed! Saving to GitHub...');
+
+                // Automatically save to GitHub after successful sync
+                await this.saveToGitHub();
+
+                this.updateProgress(100, 'Sync and GitHub save completed!');
 
                 // Save state
                 this.saveSyncState();
@@ -206,7 +218,7 @@ class GoogleDocsSync {
                 // Update UI
                 this.updateUI();
 
-                this.showNotification(`Successfully synced: ${this.documentInfo.name}`, 'success');
+                this.showNotification(`Successfully synced and saved to GitHub: ${this.documentInfo.name}`, 'success');
             }
             
         } catch (error) {
@@ -216,6 +228,54 @@ class GoogleDocsSync {
             this.isProcessing = false;
             this.hideLoading();
             this.updateUI();
+        }
+    }
+
+    /**
+     * Save document to GitHub automatically after sync
+     */
+    async saveToGitHub() {
+        if (!this.documentInfo) {
+            throw new Error('No document available to save');
+        }
+
+        try {
+            console.log('📁 Saving to GitHub:', this.documentInfo.name);
+            
+            // Add cache-busting parameter to avoid 404 caching issues
+            const apiUrl = `${this.githubApiUrl}?t=${Date.now()}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    documentId: this.documentInfo.id,
+                    documentInfo: this.documentInfo
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+
+            // Store the GitHub save timestamp
+            this.lastGitHubSave = new Date().toISOString();
+            
+            console.log('✅ Successfully saved to GitHub:', data.githubFile.name);
+            
+        } catch (error) {
+            console.error('GitHub save error:', error);
+            // Don't throw the error - let the sync complete but show warning
+            this.showNotification(`Warning: GitHub save failed: ${error.message}`, 'warning');
         }
     }
 
@@ -298,6 +358,19 @@ class GoogleDocsSync {
             fileSize.textContent = size;
         }
 
+        // Update GitHub status
+        const driveStatus = document.getElementById('driveStatus');
+        if (driveStatus) {
+            if (this.lastGitHubSave) {
+                const saveDate = new Date(this.lastGitHubSave);
+                driveStatus.textContent = `Saved ${saveDate.toLocaleDateString()}`;
+                driveStatus.className = 'status-value status-success';
+            } else {
+                driveStatus.textContent = 'Not saved';
+                driveStatus.className = 'status-value status-idle';
+            }
+        }
+
         // Update buttons
         const downloadButton = document.getElementById('downloadDocxButton');
         const syncButton = document.getElementById('syncDocButton');
@@ -311,7 +384,7 @@ class GoogleDocsSync {
             if (this.isProcessing) {
                 syncButton.innerHTML = '<span class="btn-icon">⏳</span>Syncing...';
             } else {
-                syncButton.innerHTML = '<span class="btn-icon">☁️</span>Sync from Google Docs';
+                syncButton.innerHTML = '<span class="btn-icon">☁️</span>Sync & Save to GitHub';
             }
         }
 
