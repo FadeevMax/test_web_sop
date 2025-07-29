@@ -400,7 +400,16 @@ class GoogleDocsSync {
         }
 
         if (updateDriveButton) {
-            updateDriveButton.disabled = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
+            // GitHub save only needs documentInfo (document ID), not the local DOCX data
+            const shouldDisable = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
+            console.log('🔍 GitHub button state:', {
+                documentInfo: !!this.documentInfo,
+                isProcessing: this.isProcessing,
+                isDriveUpdating: this.isDriveUpdating,
+                shouldDisable: shouldDisable
+            });
+            
+            updateDriveButton.disabled = shouldDisable;
             if (this.isDriveUpdating) {
                 updateDriveButton.innerHTML = '<span class="btn-icon">⏳</span>Saving to GitHub...';
             } else {
