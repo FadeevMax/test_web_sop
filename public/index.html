@@ -58,6 +58,11 @@
                                     <span class="btn-icon">📥</span>
                                     Download DOCX
                                 </button>
+                                
+                                <button id="updateDriveButton" class="btn btn-success" disabled>
+                                    <span class="btn-icon">💾</span>
+                                    Update file on Google Drive
+                                </button>
                             </div>
                         </div>
 
@@ -74,6 +79,10 @@
                             <div class="status-item">
                                 <span class="status-label">File Size:</span>
                                 <span id="fileSize" class="status-value">-</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Drive Status:</span>
+                                <span id="driveStatus" class="status-value status-idle">Not updated</span>
                             </div>
                         </div>
                     </div>
