@@ -14,6 +14,7 @@ class GoogleDocsSync {
         this.driveFileInfo = null;
         this.apiUrl = '/api/google-docs-sync';
         this.driveApiUrl = '/api/update-drive';
+        this.githubApiUrl = '/api/save-to-github';
     }
 
     /**
@@ -234,28 +235,28 @@ class GoogleDocsSync {
     }
 
     /**
-     * Update file on Google Drive
+     * Save file to GitHub (alternative to Google Drive)
      */
     async updateGoogleDrive() {
         if (this.isDriveUpdating) {
-            this.showNotification('Drive update already in progress...', 'warning');
+            this.showNotification('GitHub save already in progress...', 'warning');
             return;
         }
 
         if (!this.documentInfo) {
-            this.showNotification('No document available to update. Please sync first.', 'warning');
+            this.showNotification('No document available to save. Please sync first.', 'warning');
             return;
         }
 
         this.isDriveUpdating = true;
         this.updateUI();
-        this.showLoading('Updating Google Drive...');
+        this.showLoading('Saving to GitHub...');
 
         try {
-            this.updateProgress(10, 'Preparing Drive update...');
+            this.updateProgress(10, 'Preparing GitHub upload...');
             
             // Add cache-busting parameter to avoid 404 caching issues
-            const apiUrl = `${this.driveApiUrl}?t=${Date.now()}`;
+            const apiUrl = `${this.githubApiUrl}?t=${Date.now()}`;
             
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -268,7 +269,7 @@ class GoogleDocsSync {
                 })
             });
 
-            this.updateProgress(70, 'Uploading to Drive...');
+            this.updateProgress(70, 'Uploading to GitHub...');
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -281,10 +282,14 @@ class GoogleDocsSync {
                 throw new Error(data.error || 'Unknown error occurred');
             }
 
-            this.updateProgress(100, 'Drive update completed!');
+            this.updateProgress(100, 'GitHub save completed!');
 
-            // Store the drive file info
-            this.driveFileInfo = data.driveFile;
+            // Store the github file info
+            this.driveFileInfo = {
+                ...data.githubFile,
+                url: data.githubFile.url,
+                downloadUrl: data.githubFile.downloadUrl
+            };
             this.lastDriveUpdate = new Date().toISOString();
 
             // Save state
@@ -293,12 +298,12 @@ class GoogleDocsSync {
             // Update UI
             this.updateUI();
 
-            const actionText = data.driveFile.action === 'updated' ? 'updated' : 'created';
-            this.showNotification(`✅ Successfully ${actionText} file on Google Drive: ${data.driveFile.name}`, 'success');
+            const actionText = data.githubFile.action === 'updated' ? 'updated' : 'created';
+            this.showNotification(`✅ Successfully ${actionText} file on GitHub: ${data.githubFile.name}`, 'success');
             
         } catch (error) {
-            console.error('Drive update error:', error);
-            this.showNotification(`Drive update failed: ${error.message}`, 'error');
+            console.error('GitHub save error:', error);
+            this.showNotification(`GitHub save failed: ${error.message}`, 'error');
         } finally {
             this.isDriveUpdating = false;
             this.hideLoading();
@@ -397,9 +402,9 @@ class GoogleDocsSync {
         if (updateDriveButton) {
             updateDriveButton.disabled = !this.documentInfo || this.isProcessing || this.isDriveUpdating;
             if (this.isDriveUpdating) {
-                updateDriveButton.innerHTML = '<span class="btn-icon">⏳</span>Updating Drive...';
+                updateDriveButton.innerHTML = '<span class="btn-icon">⏳</span>Saving to GitHub...';
             } else {
-                updateDriveButton.innerHTML = '<span class="btn-icon">💾</span>Update file on Google Drive';
+                updateDriveButton.innerHTML = '<span class="btn-icon">📁</span>Save to GitHub';
             }
         }
 
@@ -420,10 +425,10 @@ class GoogleDocsSync {
                 driveStatus.className = 'status-value status-loading';
             } else if (this.driveFileInfo) {
                 const updateDate = new Date(this.lastDriveUpdate).toLocaleDateString();
-                driveStatus.textContent = `Updated ${updateDate}`;
+                driveStatus.textContent = `Saved ${updateDate}`;
                 driveStatus.className = 'status-value status-success';
             } else {
-                driveStatus.textContent = 'Not updated';
+                driveStatus.textContent = 'Not saved';
                 driveStatus.className = 'status-value status-idle';
             }
         }
