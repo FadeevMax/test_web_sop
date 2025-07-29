@@ -103,6 +103,15 @@ export default async function handler(req, res) {
         // Use Python's exact approach: files().create(body=file_metadata, media_body=media)
         console.log(`📄 Creating DOCX file using Python-matching approach...`);
         
+        // Create a readable stream from the buffer (like Python's MediaIoBaseUpload equivalent)
+        const { Readable } = await import('stream');
+        const docxStream = new Readable({
+            read() {
+                this.push(docxBuffer);
+                this.push(null);
+            }
+        });
+        
         const uploadResponse = await drive.files.create({
             requestBody: {
                 name: fileName,
@@ -111,7 +120,7 @@ export default async function handler(req, res) {
             },
             media: {
                 mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                body: docxBuffer
+                body: docxStream
             },
             fields: 'id, name, webViewLink, modifiedTime'
         });
