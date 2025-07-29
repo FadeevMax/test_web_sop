@@ -1,0 +1,42 @@
+{
+  "name": "gti-sop-assistant-try2",
+  "version": "1.0.0",
+  "description": "GTI SOP Assistant - Google Docs Integration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build step not needed for static site'",
+    "start": "python -m http.server 8000",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "google-auth-library": "^9.4.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "sop",
+    "assistant",
+    "google-docs",
+    "docx",
+    "document-management"
+  ],
+  "author": "GTI Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/gti-sop-assistant.git"
+  },
+  "vercel": {
+    "functions": {
+      "api/google-docs-sync.js": {
+        "maxDuration": 30
+      }
+    }
+  }
+}
