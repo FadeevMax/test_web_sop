@@ -121,44 +121,41 @@ export default async function handler(req, res) {
             }
         });
         
-        // Check if file with same name exists (for updating vs creating)
-        console.log(`🔍 Checking for existing file: ${fileName}`);
-        const existingFilesResponse = await drive.files.list({
-            q: `name='${fileName}' and parents in '${folderId}'`,
-            fields: 'files(id, name)'
+        // Workaround: Create file in My Drive root first, then move to target folder
+        console.log(`📄 Creating file in My Drive root first (service account limitation workaround)`);
+        
+        // First, create the file in My Drive root (no parent folder)
+        const createResponse = await drive.files.create({
+            requestBody: {
+                name: fileName,
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            },
+            media: {
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                body: docxStream
+            },
+            fields: 'id, name, webViewLink, modifiedTime'
         });
         
-        let uploadResponse;
+        console.log(`✅ File created in My Drive: ${createResponse.data.name} (${createResponse.data.id})`);
         
-        if (existingFilesResponse.data.files.length > 0) {
-            // Update existing file
-            const existingFileId = existingFilesResponse.data.files[0].id;
-            console.log(`🔄 Updating existing file: ${fileName} (${existingFileId})`);
-            
-            uploadResponse = await drive.files.update({
-                fileId: existingFileId,
-                media: {
-                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    body: docxStream
-                },
-                fields: 'id, name, webViewLink, modifiedTime'
+        // Then move it to the target folder
+        try {
+            console.log(`📂 Moving file to target folder: ${folderId}`);
+            const moveResponse = await drive.files.update({
+                fileId: createResponse.data.id,
+                addParents: folderId,
+                removeParents: 'root',
+                fields: 'id, name, webViewLink, modifiedTime, parents'
             });
-        } else {
-            // Create new file
-            console.log(`📄 Creating new file: ${fileName}`);
             
-            uploadResponse = await drive.files.create({
-                requestBody: {
-                    name: fileName,
-                    parents: [folderId],
-                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                },
-                media: {
-                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    body: docxStream
-                },
-                fields: 'id, name, webViewLink, modifiedTime'
-            });
+            console.log(`✅ File moved to target folder successfully`);
+            uploadResponse = moveResponse;
+            
+        } catch (moveError) {
+            console.warn(`⚠️ Could not move file to target folder, but file was created: ${moveError.message}`);
+            // Use the original response even if move failed
+            uploadResponse = createResponse;
         }
         
         console.log(`✅ Successfully saved to Drive: ${uploadResponse.data.name} (${uploadResponse.data.id})`);
@@ -171,8 +168,8 @@ export default async function handler(req, res) {
                 webViewLink: uploadResponse.data.webViewLink,
                 modifiedTime: uploadResponse.data.modifiedTime,
                 folderId: folderId,
-                folderName: 'Specified Drive Folder',
-                action: existingFilesResponse.data.files.length > 0 ? 'updated' : 'created'
+                folderName: 'Drive Folder (or My Drive if move failed)',
+                action: 'created'
             },
             timestamp: new Date().toISOString()
         };
