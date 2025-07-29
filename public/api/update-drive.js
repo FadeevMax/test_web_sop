@@ -61,7 +61,10 @@ export default async function handler(req, res) {
         console.log('🔐 Initializing Google Auth...');
         const auth = new GoogleAuth({
             credentials: serviceAccountKey,
-            scopes: ['https://www.googleapis.com/auth/drive.file']
+            scopes: [
+                'https://www.googleapis.com/auth/documents.readonly',
+                'https://www.googleapis.com/auth/drive'
+            ]
         });
         
         const authClient = await auth.getClient();
