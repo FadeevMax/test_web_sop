@@ -8,10 +8,12 @@
  * 4. Detects tab separations for better chunking
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-export class EnhancedDocxProcessor {
+const { readFileSync, writeFileSync, existsSync, mkdirSync } = fs;
+
+class EnhancedDocxProcessor {
     constructor(options = {}) {
         this.targetChunkSize = options.targetChunkSize || 800;
         this.maxChunkSize = options.maxChunkSize || 1200;
@@ -410,3 +412,5 @@ This applies to both regular and RISE orders in New Jersey market.`,
         return grouped;
     }
 }
+
+module.exports = { EnhancedDocxProcessor };

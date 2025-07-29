@@ -8,6 +8,9 @@
     },
     "api/save-to-github.js": {
       "maxDuration": 30
+    },
+    "api/semantic-chunking.js": {
+      "maxDuration": 60
     }
   }
 }

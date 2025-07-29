@@ -1,13 +1,10 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
-import { readFile } from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { EnhancedDocxProcessor } from './docx-processor.js';
+const fs = require('fs');
+const path = require('path');
+const { EnhancedDocxProcessor } = require('./docx-processor.js');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } = fs;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -45,8 +42,8 @@ export default async function handler(req, res) {
             });
         }
 
-        // Create output directory
-        const outputDir = path.join(__dirname, '..', 'semantic_output');
+        // Create output directory in a temporary location  
+        const outputDir = path.join(process.cwd(), 'temp_semantic_output');
         const imagesDir = path.join(outputDir, 'images');
         
         if (!existsSync(outputDir)) {
@@ -122,7 +119,7 @@ async function downloadDocxFromGitHub(token, repo, branch) {
         const buffer = Buffer.from(fileData.content, 'base64');
         
         // Save to local cache
-        const cacheDir = path.join(__dirname, '..', 'cache');
+        const cacheDir = path.join(process.cwd(), 'cache');
         if (!existsSync(cacheDir)) {
             mkdirSync(cacheDir, { recursive: true });
         }
